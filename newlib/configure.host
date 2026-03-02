@@ -527,6 +527,10 @@ case "${host}" in
   m68hc11-*-*|m6811-*-*|m6812-*-*|m68hc12-*-*)
 	;;
 
+  m68k-atari-elf)
+	sys_dir=atari
+	have_crt0="no"
+	;;
   m68k-sun-sunos*)
 	unix_dir=unix
 	;;
@@ -769,7 +773,7 @@ newlib_cflags="${newlib_cflags} -DCLOCK_PROVIDED -DMALLOC_PROVIDED -DEXIT_PROVID
 	syscall_dir=
 	;;
   m68k-atari-elf)
-	newlib_cflags="${newlib_cflags} -DHAVE_RENAME -DMISSING_SYSCALL_NAMES"
+	newlib_cflags="${newlib_cflags} -D__M68K_ATARI_ELF__ -DHAVE_RENAME -DMISSING_SYSCALL_NAMES"
 	syscall_dir=
 	;;
   mcore-*-*)

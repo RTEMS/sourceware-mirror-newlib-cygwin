@@ -216,7 +216,7 @@ ATARI_SRC_LIBGLOSS := atari-environ.c atari-execve.c atari-link.c atari-times.c 
 	atari-sbrk.c atari-stat.c atari-unlink.c atari-write.c \
 	atari-chown.c atari-fork.c atari-getentropy.c atari-gettod.c atari-readlink.c \
 	atari-symlink.c atari-chdir.c atari-getcwd.c atari-mkdir.c atari-rmdir.c \
-	atari-rename.c
+	atari-rename.c atari-setmode.c
 
 ATARI_OBJS_LIBGLOSS := $(foreach source,$(ATARI_SRC_LIBGLOSS),$(basename $(source)).o)
 

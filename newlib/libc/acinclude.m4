@@ -13,6 +13,7 @@ AM_CONDITIONAL(HAVE_UNIX_DIR, test x${unix_dir} != x)
 dnl We always recur into sys and machine, and let them decide what to do.
 m4_foreach_w([SYS_DIR], [
   a29khif amdgcn arm
+  atari
   d10v
   epiphany
   h8300hms h8500hms

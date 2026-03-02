@@ -138,6 +138,10 @@ __stextmode (int fd)
   extern int _cygwin_istext_for_stdio (int);
   return _cygwin_istext_for_stdio (fd);
 #else
+  #ifdef __M68K_ATARI_ELF__
+    extern int atari_istext_for_stdio (int);
+    return atari_istext_for_stdio (fd);
+  #endif
   return 0;
 #endif
 }

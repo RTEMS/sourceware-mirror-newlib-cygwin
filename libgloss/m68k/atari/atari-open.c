@@ -5,27 +5,15 @@
 
 #include <unistd.h>
 #include <_ansi.h>
+#include <fcntl.h>
+#include <io.h>
 #include "atari-gem_errno.h"
 #include "atari-traps.h"
 
-// I really don't like having these defines here,
-// fcntl.h where they are, also defines a function for "open",
-// that is different from the one libgloss is supposed to provide...
-#ifndef O_CREAT
-#define O_CREAT 0x0200
-#endif // O_CREAT
-#ifndef O_APPEND
-#define O_APPEND 0x0008
-#endif // O_APPEND
-#ifndef O_EXCL
-#define O_EXCL 0x0800
-#endif // O_EXCL
-#ifndef O_TRUNC
-#define O_TRUNC 0x0400
-#endif // O_TRUNC
+extern int atari_get_fmode(int* mode);
+extern int atari_setmode(short f, int mode);
 
-// mode is ignored. Those kind of settings is not supported by the st.
-int open(const char *buf, int flags, int mode)
+int open(const char *buf, int flags, ...)
 {
 	int bios_handle = -1;
 	unsigned short bios_mode = (unsigned short)(flags & 0x3); // bits 0-1 the same for st and linux.
@@ -70,6 +58,21 @@ int open(const char *buf, int flags, int mode)
 	{
 		gem_error_to_errno(bios_handle);
 		bios_handle = -1;
+	}
+	else
+	{
+		int fmode = flags & (O_TEXT | O_BINARY);
+		if (fmode == 0)
+		{
+			// Initializes the correct default mode.
+			atari_get_fmode(&fmode);
+		}
+		if (atari_setmode((short)bios_handle, fmode) == -1)
+		{
+			// Close file. errno is alredy set.
+			trap1_3e((unsigned short)bios_handle);
+			return -1;
+		}
 	}
 	/*
 		If bios_handle is positive, then the low word is the gemdos handle, and the high word is zero.

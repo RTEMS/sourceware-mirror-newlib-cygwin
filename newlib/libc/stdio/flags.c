@@ -72,7 +72,7 @@ __sflags (struct _reent *ptr,
 	  m |= O_BINARY;
 #endif
 	  break;
-#ifdef __CYGWIN__
+#if defined (__CYGWIN__) || defined (__M68K_ATARI_ELF__)
 	case 't':
 	  m |= O_TEXT;
 	  break;
