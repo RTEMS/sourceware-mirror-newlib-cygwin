@@ -29,7 +29,6 @@
 #include <inttypes.h>
 #include <stdint.h>
 
-/* See comments in div.c for implementation details. */
 imaxdiv_t
 imaxdiv(intmax_t numer, intmax_t denom)
 {
