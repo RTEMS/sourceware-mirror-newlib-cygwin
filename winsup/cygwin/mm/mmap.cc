@@ -1422,8 +1422,8 @@ munlock (const void *addr, size_t len)
   return ret;
 }
 
-extern "C" int
-posix_madvise (void *addr, size_t len, int advice)
+static int
+madvise_worker (void *addr, size_t len, int advice)
 {
   int ret = 0;
   /* Check parameters. */
@@ -1514,6 +1514,26 @@ posix_madvise (void *addr, size_t len, int advice)
       break;
     }
 out:
+  return ret;
+}
+
+extern "C" int
+madvise (void *addr, size_t len, int advice)
+{
+  int ret = madvise_worker (addr, len, advice);
+  if (ret > 0)
+    {
+      set_errno (ret);
+      ret = -1;
+    }
+  syscall_printf ("%R = madvise(%p, %lu, %d)", ret, addr, len, advice);
+  return ret;
+}
+
+extern "C" int
+posix_madvise (void *addr, size_t len, int advice)
+{
+  int ret = madvise_worker (addr, len, advice);
   syscall_printf ("%d = posix_madvise(%p, %lu, %d)", ret, addr, len, advice);
   return ret;
 }

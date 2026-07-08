@@ -951,7 +951,7 @@ lseek SIGFE
 lsetxattr SIGFE
 lstat SIGFE
 lutimes SIGFE
-madvise = posix_madvise SIGFE
+madvise SIGFE
 makecontext NOSIGFE
 mallinfo SIGFE
 malloc SIGFE
