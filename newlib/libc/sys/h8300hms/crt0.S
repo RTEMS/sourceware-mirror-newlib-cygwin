@@ -1,6 +1,12 @@
 ; H8/300, H8/300H, H8/300S and H8SX start up file.
 
 #include "setarch.h"
+#include "newlib.h"
+
+#ifdef _HAVE_INITFINI_ARRAY
+#define __init	___libc_init_array
+#define __fini	___libc_fini_array
+#endif
 
 #ifdef __H8300__
 
