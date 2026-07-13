@@ -46,6 +46,14 @@ __COPYRIGHT(
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+
+#ifdef __INTPTR_TYPE__
+	#define INTPTRTYPE intptr_t
+#else
+	/* Just in case there is no intptr_t on a target... */
+	#define INTPTRTYPE long
+#endif
 
 #define	TEST(e)	((e) ? (void)0 : testfail(__FILE__, __LINE__, #e))
 
@@ -77,11 +85,11 @@ main(int argc, char *argv[])
 		ch[0] = 'a' + i;
 		e.key = strdup(ch);	/* ptr to provided key is kept! */
 		TEST(e.key != NULL);
-		e.data = (void *)(long)i;
+		e.data = (void *)(INTPTRTYPE)i;
 		ep = hsearch(e, ENTER);
 		TEST(ep != NULL);
 		TEST(strcmp(ep->key, ch) == 0);
-		TEST((long)ep->data == i);
+		TEST((INTPTRTYPE)ep->data == i);
 	}
 
 	/* e.key should be constant from here on down. */
@@ -93,16 +101,16 @@ main(int argc, char *argv[])
 		ep = hsearch(e, FIND);
 		TEST(ep != NULL);
 		TEST(strcmp(ep->key, ch) == 0);
-		TEST((long)ep->data == i);
+		TEST((INTPTRTYPE)ep->data == i);
 	}
 
 	/* Check duplicate entry.  Should _not_ overwrite existing data.  */
 	ch[0] = 'a';
-	e.data = (void *)(long)12345;
+	e.data = (void *)(INTPTRTYPE)12345;
 	ep = hsearch(e, FIND);
 	TEST(ep != NULL);
 	TEST(strcmp(ep->key, ch) == 0);
-	TEST((long)ep->data == 0);
+	TEST((INTPTRTYPE)ep->data == 0);
 
 	/* Check for something that's not there. */
 	ch[0] = 'A';
@@ -115,9 +123,9 @@ main(int argc, char *argv[])
 	ch[0] = 'b';
 	ep2 = hsearch(e, FIND);
 	TEST(ep != NULL);
-	TEST(strcmp(ep->key, "a") == 0 && (long)ep->data == 0);
+	TEST(strcmp(ep->key, "a") == 0 && (INTPTRTYPE)ep->data == 0);
 	TEST(ep2 != NULL);
-	TEST(strcmp(ep2->key, "b") == 0 && (long)ep2->data == 1);
+	TEST(strcmp(ep2->key, "b") == 0 && (INTPTRTYPE)ep2->data == 1);
 
 	hdestroy();
 
