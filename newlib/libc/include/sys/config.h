@@ -20,9 +20,6 @@
 /* exceptions first */
 #if defined(__H8500__) || defined(__W65__)
 #define __SMALL_BITFIELDS
-/* ???  This conditional is true for the h8500 and the w65, defining H8300
-   in those cases probably isn't the right thing to do.  */
-#define H8300 1
 #endif
 
 /* 16 bit integer machines */
@@ -41,11 +38,14 @@
 #undef UINT_MAX
 #define INT_MAX __INT_MAX__
 #define UINT_MAX (__INT_MAX__ * 2U + 1)
+#define _POINTER_INT __INTPTR_TYPE__
+#define _READ_WRITE_RETURN_TYPE _ssize_t
+#define _READ_WRITE_BUFSIZE_TYPE size_t
 #endif
 
 #if (defined(__CR16__) || defined(__CR16C__) ||defined(__CR16CP__))
 #ifndef __INT32__
-#define __SMALL_BITFIELDS      
+#define __SMALL_BITFIELDS
 #undef INT_MAX
 #undef UINT_MAX
 #define INT_MAX 32767
