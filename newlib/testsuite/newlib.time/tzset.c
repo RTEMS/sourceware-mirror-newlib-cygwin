@@ -1,18 +1,19 @@
 /* Test that valid POSIX timezone strings are correctly parsed by tzset(3). */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 // BEGIN test vectors
 #include <time.h>
 #include <limits.h>
 
-#define IN_SECONDS(h, m, s) ((h) * 3600 + (m) * 60 + (s))
+#define IN_SECONDS(h, m, s) ((h) * INT32_C(3600) + (m) * INT32_C(60) + (s))
 #define NO_TIME INT_MIN
 
 struct tz_test {
     const char* tzstr;
-    int offset_seconds;
-    int dst_offset_seconds;
+    int32_t offset_seconds;
+    int32_t dst_offset_seconds;
 };
 
 extern struct tm winter_tm;
