@@ -39,8 +39,13 @@ int main()
       setlocale (LC_CTYPE, "C-UTF-8");
       CHECK (iswalpha(0x0967));
       CHECK (!iswalpha(0x128e));
+#if __SIZEOF_WINT_T__ > 2
+      /* These two lines may cause compilation warnings on targets
+         where wint_t is 16 bits wide, which in turn causes the test
+         case to fail. */
       CHECK (iswalnum(0x1d7ce));
       CHECK (!iswalnum(0x1d800));
+#endif
       CHECK (iswcntrl(0x007f));
       CHECK (!iswcntrl(0x2027));
       CHECK (iswdigit(L'2'));
