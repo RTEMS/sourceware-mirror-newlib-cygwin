@@ -31,6 +31,11 @@ Usage: ${0##*/} [OPTION...] {CI|WORK|FAIL|test...}
   WORK      run all tests tagged WORKS
   FAIL      run all tests tagged FAILS
   test...   run individual test(s) (may require '-f')
+
+  Exit status:
+    0: all tests succeeded
+    1: other error
+    2: some test(s) failed
 EOF
   exit 1
 }
@@ -741,7 +746,15 @@ if [ $total_failed != 0 ]; then
 
   echo -n ">>> FAILURE: $(ts): ${#tests_failed[*]} of $total_testcases test case(s) failed"
   echo "; total: $total_failed of $total_tested test(s) failed"
-  exit 1
+
+  # Report list of failed tests as a GHA compatible annotation
+  echo -n "::error:: stress-ng failures:"
+  for ((t = 0; t < ${#tests[*]}; t++)); do
+    test -z "${tests_failed[t]}" || echo -n " ${tests[t]}"
+  done
+  echo
+
+  exit 2
 fi
 
 echo -n ">>> SUCCESS: $(ts): all test(s) of $total_testcases test case(s) succeeded"
