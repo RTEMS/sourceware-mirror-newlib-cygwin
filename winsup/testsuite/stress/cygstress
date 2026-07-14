@@ -2,7 +2,7 @@
 #
 # Run stress-ng on Cygwin
 #
-# Copyright 2025 Christian Franke
+# Copyright 2025-26 Christian Franke
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -22,7 +22,7 @@ Usage: ${0##*/} [OPTION...] {CI|WORK|FAIL|test...}
   -f        force execution of tests tagged 'heavy' or 'admin'
   -n        print commands only (dry-run)
   -r N      run test set N times [default: 1]
-  -s PATH   stress-ng executable [default: stress-ng]
+  -s PATH   stress-ng executable [default: /usr/bin/stress-ng]
   -t N      run each test for at least N seconds [default: 5]
   -v        print stress-ng output always [default: on error only]
   -w N      start N workers for each test [default: 2]
@@ -36,7 +36,7 @@ EOF
 }
 
 # Tags:
-# WORKS: works on Cygwin (3.7.0-0.192.gc85f42a4f3ee.x86_64) + stress-ng V0.19.02
+# WORKS: works on Cygwin 3.7.0-0.551.g383618c8902f.x86_64 + stress-ng 0.21.04
 # WORKS,CI: possibly suitable subset for Cygwin CI test.
 # FAILS: fails on Cygwin, see "TODO ..." for details.
 # heavy: heavy resource usage, may work, hang, freeze desktop, require reset, ...
@@ -46,6 +46,7 @@ EOF
 stress_tests='
 # TEST [ARGS]   # Tag       # Comment
   access        # FAILS     # TODO undecided: "access 004 on chmod mode 400 failed: 13 (Permission denied)"
+  acct          # -----     # requires acct(2)
   acl           # WORKS,CI  # (fixed in stress-ng 0.18.12)
   affinity      # WORKS
   af-alg        # -----     # requires AF_ALG
@@ -69,8 +70,8 @@ stress_tests='
   bubblesort    # WORKS
 
   cache         # WORKS
-  cacheline     # WORKS
   cachehammer   # WORKS
+  cacheline     # WORKS
   cap           # -----
   cgroup        # -----
   chattr        # -----
@@ -78,6 +79,7 @@ stress_tests='
   chmod         # WORKS,CI
   chown         # FAILS     # TODO undecided: "fchown failed, errno=22 (Invalid argument)"
   chroot        # admin
+  chyperbolic   # WORKS
   clock         # WORKS,CI  # (fixed in stress-ng 0.18.12: "timer_create failed for timer ...
                             #  ... ''CLOCK_THREAD_CPUTIME_ID'', errno=134")
                             # (fixed in Cygwin 3.7.0: "clock_settime was able to set an ...
@@ -88,9 +90,11 @@ stress_tests='
   copy-file     # -----
   cpu           # WORKS
   cpu-online    # -----
-  cpu-sched     # FAILS     # TODO undecided: "child died: signal 9 ''SIGKILL''"
+  cpu-sched     # FAILS     # TODO undecided: "child died: signal 9 ''SIGKILL''" and/or processes left
                             # (fixed in Cygwin 3.6.0: signals lost after SIGSTOP)
+  crc           # WORKS
   crypt         # WORKS     # uses libcrypt
+  ctrig         # WORKS
   cyclic        # admin
 
   daemon        # WORKS
@@ -109,17 +113,18 @@ stress_tests='
   dynlib        # -----
 
   easy-opcode   # WORKS
-  eigen         # WORKS     # uses libeigen (C++ template lib)
   efivar        # -----
+  eigen         # WORKS     # uses libeigen (C++ template lib)
   enosys        # -----
   env           # heavy     # creates very large environment until OOM
   epoll         # -----
+  eth-sniff     # -----     # requires <net/ethernet.h>, ...
   eventfd       # -----
-  exec          # WORKS,CI
+  exec          # WORKS,CI  # TODO stress-ng: "open ... failed, errno=2" if started from PATH
   exit-group    # -----     # requires exit_group(2)
   expmath       # WORKS
 
-  factor        # FAILS     # uses libgmp; TODO undecided: "terminated on signal 11 ''SIGSEGV''"
+  factor        # WORKS     # uses libgmp; (fixed in ?: "terminated on signal 11 ''SIGSEGV''")
   fallocate     # WORKS,CI
   fanotify      # -----
   far-branch    # WORKS
@@ -134,10 +139,11 @@ stress_tests='
   fiemap        # -----
   fifo          # WORKS
   file-ioctl    # WORKS,CI
+  filehole      # WORKS,CI
   filename      # FAILS     # TODO Cygwin: high surrogate at the end of the string is lost, please see:
                             #   https://sourceware.org/pipermail/cygwin/2025-June/258386.html
                             # (fixed in Cygwin 3.7.0: lone high surrogate not encoded correctly)
-  filename --filename-opts posix # WORKS,CI # restricts filenames to POSIX charset
+  filename --filename-opts utf8 # WORKS,CI # restricts filenames to UTF-8 charset
   filerace      # heavy     # uses many [p]write() commands
                             # TODO undecided: watchdog timeout may be too short
   flipflop      # WORKS
@@ -148,6 +154,7 @@ stress_tests='
   forkheavy     # heavy     # forks until process table is full
   fp            # WORKS,CI
   fp-error      # WORKS,CI
+  fp-misc       # WORKS,CI
   fpunch        # WORKS,CI  # (fixed in stress-ng 0.19.00: lseek() on shared fd)
   fractal       # WORKS
   fsize         # heavy     # creates large files until disk is full
@@ -157,6 +164,7 @@ stress_tests='
   funcret       # WORKS
   futex         # -----
 
+  gamma         # WORKS
   get           # WORKS
   getdent       # -----
   getrandom     # -----
@@ -178,13 +186,13 @@ stress_tests='
   inotify       # -----     # requires inotify_*(2)
   insertionsort # WORKS
   intmath       # WORKS
-  io            # WORKS
+  io            # WORKS     # (fixed in stress-ng 0.21.04:: "rmdir '...' failed, errno=2")
   iomix         # WORKS
   ioport        # -----
   ioprio        # -----
   io-uring      # -----
   ipsec-mb      # -----     # requires libipsec-mb
-  itimer        # WORKS,CI
+  itimer        # -----     # requires ITIMER_PROF
 
   jpeg          # WORKS     # uses libjpeg
   judy          # -----     # requires libJudy (ORPHANED)
@@ -205,7 +213,7 @@ stress_tests='
   llc-affinity  # WORKS
   loadavg       # WORKS
   locka         # WORKS
-  lockbus       # WORKS
+  lockbus       # FAILS     # TODO Cygwin: processes left
   lockf         # WORKS,CI  # (fixed in Cygwin 3.5.5: "NtCreateEvent(lock): 0xC000003" and ...
                             #  "can''t handle more than 910 locks per file")
   lockmix       # WORKS
@@ -238,11 +246,12 @@ stress_tests='
   mmap          # WORKS,CI
   mmapaddr      # WORKS
   mmapcow       # WORKS
-  mmapfork      # WORKS
   mmapfiles     # WORKS
   mmapfixed     # WORKS
+  mmapfork      # WORKS
   mmaphuge      # -----
   mmapmany      # WORKS
+  mmaprandom    # -----     # requires deprecated <sys/tree.h>, RB_GENERATE does not compile
   mmaptorture   # heavy
   module        # -----
   monte-carlo   # WORKS
@@ -260,7 +269,7 @@ stress_tests='
   munmap        # -----
   mutex         # WORKS
 
-  nanosleep     # WORKS,CI  # (fixed in ?: "detected 1 unexpected nanosleep underruns")
+  nanosleep     # FAILS     # TODO undecided: "detected 1 unexpected nanosleep underruns"
   netdev        # -----
   netlink-proc  # -----
   netlink-task  # -----
@@ -268,12 +277,15 @@ stress_tests='
   nop           # WORKS
   null          # WORKS
   numa          # -----
+  numacopy      # -----
 
   oom-pipe      # -----
   opcode        # -----
-  open          # WORKS,CI  # TODO undecided: "rmdir ... failed, errno=90 (Directory not empty)"
+  open          # WORKS,CI  # (fixed in ?: "rmdir ... failed, errno=90 (Directory not empty)")
+  ovpn          # -----     # requires <linux/ovpn.h>
 
   pagemove      # -----
+  pagescatter   # WORKS,CI  # (fixed in Cygwin 3.7.0: madvise() returns error number instead of -1)
   pageswap      # -----
   pci           # -----
   personality   # -----
@@ -290,7 +302,7 @@ stress_tests='
   powmath       # WORKS
   prctl         # -----
   prefetch      # WORKS
-  prime         # FAILS     # uses libgmp; TODO undecided: "terminated on signal 11 ''SIGSEGV''"
+  prime         # WORKS     # uses libgmp; (fixed in ?: "terminated on signal 11 ''SIGSEGV''")
   prio-inv      # -----     # requires <pthread_nt.h>
   priv-instr    # WORKS,CI  # (fixed in Cygwin 3.7.0: crashes or hangs)
   procfs        # WORKS,CI  # (fixed in Cygwin 3.7.0: /proc/PID/maps may segfault foreign processes
@@ -299,7 +311,7 @@ stress_tests='
   pthread       # WORKS,CI
   ptr-chase     # WORKS
   ptrace        # -----
-  pty           # WORKS,CI  # TODO undecided: "tcflush TCOOFLUSH on follower pty failed, errno=4"
+  pty           # FAILS     # TODO undecided: "tcflush TC(IO|OO|I)FLUSH on follower pty failed, errno=4"
                             # (fixed in Cygwin 3.7.0: implement tcdrain/tcflow/TIOCINQ for pty)
                             # (fixed in Cygwin 3.6.1: "No pty allocated, errno=0")
   qsort         # WORKS
@@ -308,10 +320,10 @@ stress_tests='
   race-sched    # WORKS
   radixsort     # WORKS     # uses libbsd
   ramfs         # -----
-  rawdev        # -----
   randlist      # WORKS
-  rawsock       # -----
+  rawdev        # -----
   rawpkt        # -----     # requires <linux/if_packet.h>, ...
+  rawsock       # -----
   rawudp        # -----
   rdrand        # WORKS
   readahead     # -----
@@ -326,6 +338,7 @@ stress_tests='
   ring-pipe     # WORKS
   rlimit        # heavy
   rmap          # WORKS
+  rofs          # -----     # requires --rofs-dir (fixed in stress-ng 0.21.02: "SIGSEGV", "listxattr() ... failed")
   rotate        # WORKS
   rseq          # -----
   rtc           # -----     # requires /dev/rtc
@@ -337,18 +350,19 @@ stress_tests='
   seccomp       # -----
   secretmem     # -----
   seek          # WORKS,CI
-  sem           # FAILS     # TODO Cygwin: "instance 0 corrupted bogo-ops counter, 556328 vs 556327"
-  sem-sysv      # FAILS     # TODO Cygwin: "aborted early, out of system resources"
+  sem           # WORKS,CI  # (fixed in ?: "instance 0 corrupted bogo-ops counter, 556328 vs 556327")
+  sem-sysv      # -----     # WORKS if cygserver is running
   sendfile      # -----     # requires sendfile(2)
   session       # WORKS
-  set           # FAILS     # TODO stress-ng: "setrlimit failed, ..., expected -EPERM, instead got errno=22 (Invalid argument)"
+  set           # WORKS     # (fixed in stress-ng 0.18.06: "setrlimit failed, ..., expected -EPERM, instead got errno=22 ...")
   shellsort     # WORKS
-  shm           # WORKS,CI
+  shm           # WORKS,CI  # TODO stress-ng: bogus message "assuming killed by OOM killer, restarting again"
+                            # (fixed in Cygwin 3.6.1 + stress-ng 0.21.04 : "ftruncate of shared memory failed")
   shm-sysv      # -----     # requires shmat(2), smdt(2)
   sigabrt       # WORKS,CI
-  sigbus        # FAILS     # TODO Cygwin: "ftruncate file to a single page failed, errno=13 (Permission denied)"
+  sigbus        # FAILS     # TODO undecided: "ftruncate file to a single page failed, errno=13 (Permission denied)"
   sigchld       # FAILS     # TODO Cygwin: hangs
-  sigfd         # -----     # TODO Cygwin: "stressor terminated with unexpected signal 11 ''SIGSEGV''"
+  sigfd         # FAILS     # TODO Cygwin: hangs
                             # (fixed in stress-ng 0.19.02: drop restriction to glibc)
   sigfpe        # WORKS,CI  # (fixed in ?: "got SIGFPE error 15 (FPE_INTDEV), expecting 20 (FPE_FLTRES)")
   sighup        # WORKS,CI
@@ -360,7 +374,9 @@ stress_tests='
   sigpipe       # FAILS     # TODO undecided: hangs in few cases
   sigq          # WORKS,CI
   sigrt         # WORKS,CI
-  sigsegv       # WORKS,CI  # (fixed in Cygwin 3.7.0: crashes or hangs)
+  sigsegv       # WORKS,CI  # (fixed in stress-ng 0.21.04: "expecting fault address 0x..., got 0xffffffffffffffff instead")
+                            # (fixed in Cygwin 3.7.0: crashes or hangs)
+  sigstop       # WORKS,CI
   sigsuspend    # WORKS,CI
   sigtrap       # WORKS,CI
   sigurg        # WORKS,CI
@@ -386,6 +402,7 @@ stress_tests='
   statmount     # -----
   str           # WORKS
   stream        # WORKS     # (fixed in stress-ng 0.19.02: --stream-l3-size set correctly)
+  strnum        # WORKS
   swap          # -----
   switch        # WORKS
   symlink       # WORKS,CI
@@ -393,14 +410,16 @@ stress_tests='
   syncload      # WORKS
   sysbadaddr    # heavy
   syscall       # FAILS     # TODO Cygwin: "terminated on signal: 11"
+  sysfs         # -----     # requires /sys
   sysinfo       # WORKS
   sysinval      # -----
-  sysfs         # -----
 
   tee           # -----     # requires tee(2)
   timer         # FAILS     # TODO undecided: "1 timer settime calls failed"
   timerfd       # heavy     # TODO undecided: may freeze desktop
+  timermix      # WORKS,CI  # (fixed in stress-ng 0.21.02: "setitimer failed, errno=22 (Invalid argument)")
   time-warp     # WORKS
+  tlb-numa      # -----     # requires mbind(2)
   tlb-shootdown # heavy
   tmpfs         # -----     # requires tmpfs filesystem
   touch         # WORKS
@@ -422,6 +441,7 @@ stress_tests='
   usersyscall   # -----
   utime         # WORKS,CI
 
+  varyload      # WORKS
   vdso          # -----
   veccmp        # WORKS
   vecfp         # WORKS
@@ -436,14 +456,15 @@ stress_tests='
   vm-rw         # -----
   vm-segv       # WORKS
   vm-splice     # -----
-  vma           # WORKS
+  vma           # FAILS     # TODO Cygwin: "*** fatal error - Exception during process exit"
   vnni          # WORKS
 
   wait          # FAILS     # TODO Cygwin: hangs in few cases
   waitcpu       # WORKS
   watchdog      # -----
   wcs           # WORKS
-  workload      # WORKS,CI  # (fixed in Cygwin 3.5.5: hang in mq_send/receive)
+  workload      # FAILS     # TODO Cygwin: hangs and/or SIGSEGV in few cases
+                            # (fixed in Cygwin 3.5.5: hang in mq_send/receive)
 
   x86cpuid      # WORKS
   x86syscall    # -----
@@ -456,7 +477,8 @@ stress_tests='
   zombie        # WORKS,CI
 '
 
-error_mode="cont"; stress_ng="stress-ng"
+stress_ng="/usr/bin/stress-ng" # "--exec" fails if plain "stress-ng" is used
+error_mode="cont"
 num_runs=1; timeout=5; workers=2
 dryrun=false; force=false; verbose=false
 taskset=
