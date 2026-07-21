@@ -1,5 +1,6 @@
 #include <_ansi.h>
 #include <../ctype/local.h>
+#include <stdint.h>
 
 /* internal function to compute width of wide char. */
 int __wcwidth (wint_t);
@@ -21,7 +22,7 @@ int __wcwidth (wint_t);
  * This macro is used to skip a few bytes to find an aligned pointer.
  * It's better to keep it as is even if _HAVE_HW_MISALIGNED_ACCESS is enabled,
  * to avoid small performance penalties (if they are not zero).  */
-#define UNALIGNED_X(X) ((long)(X) & (sizeof (long) - 1))
+#define UNALIGNED_X(X) ((long)(intptr_t)(X) & (sizeof (long) - 1))
 
 #ifdef _HAVE_HW_MISALIGNED_ACCESS
 /* Hardware performs unaligned operations with little
@@ -30,7 +31,8 @@ int __wcwidth (wint_t);
 #else /* _HAVE_HW_MISALIGNED_ACCESS */
 /* Nonzero if either X or Y is not aligned on a "long" boundary.  */
 #define UNALIGNED_X_Y(X, Y) \
-  (((long)X & (sizeof (long) - 1)) | ((long)Y & (sizeof (long) - 1)))
+  (((long)(intptr_t)X & (sizeof (long) - 1)) | \
+   ((long)(intptr_t)Y & (sizeof (long) - 1)))
 #endif /* _HAVE_HW_MISALIGNED_ACCESS */
 
 /* How many bytes are copied each iteration of the word copy loop.  */
